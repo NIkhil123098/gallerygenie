@@ -32,8 +32,8 @@ def encode_text(text):
 """
 
 
-@app.route('/testing', methods=['POST'])
-def testing():
+@app.route('/testing-data', methods=['GET','POST'])
+def testing_data():
     return "Test succeed"
 
 """
