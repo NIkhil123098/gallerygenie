@@ -1,4 +1,11 @@
+
+# A very simple Flask Hello World app for you to get started with...
+
 from flask import Flask
-@app.route("/getdata", methods=["POST"])
-def getdata():
-    return "Hello World"
+
+app = Flask(__name__)
+
+@app.route('/getdata')
+def hello_world():
+    return 'Hello from Flask!'
+
