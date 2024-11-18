@@ -26,6 +26,11 @@ def encode_text(text):
     inputs = processor(text=text, return_tensors="pt", padding=True)
     return model.get_text_features(**inputs)
 
+
+@app.route('/testing', methods=['POST'])
+def testing():
+    return "Test succeed"
+
 @app.route('/find-images', methods=['POST'])
 def find_images():
     # Get the text prompt from the request
