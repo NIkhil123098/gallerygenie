@@ -1,9 +1,12 @@
-from flask import Flask, request, jsonify
+from flask import Flask
+
+""", request, jsonify
 import os
 from PIL import Image
 import torch
 from transformers import CLIPProcessor, CLIPModel
 from werkzeug.utils import secure_filename
+"""
 
 app = Flask(__name__)
 
