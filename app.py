@@ -1,16 +1,14 @@
-from flask import Flask
-
-""", request, jsonify
+from flask import Flask, request, jsonify
 import os
 from PIL import Image
 import torch
 from transformers import CLIPProcessor, CLIPModel
 from werkzeug.utils import secure_filename
-"""
+
 
 app = Flask(__name__)
 
-"""
+
 # Load the CLIP model and processor
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch16")
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
@@ -29,15 +27,15 @@ def encode_image(image):
 def encode_text(text):
     inputs = processor(text=text, return_tensors="pt", padding=True)
     return model.get_text_features(**inputs)
-"""
+
 
 
 @app.route('/testing-data', methods=['GET','POST'])
 def testing_data():
     return "Test succeed"
 
-"""
-@app.route('/find-images', methods=['POST'])
+
+@app.route('/find-images', methods=['GET','POST'])
 def find_images():
     # Get the text prompt from the request
     text = request.form['text']
@@ -71,4 +69,4 @@ def find_images():
 
 if __name__ == '__main__':
     app.run(debug=True)
-"""
+
