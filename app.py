@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
+"""
 # Load the CLIP model and processor
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch16")
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
@@ -25,6 +26,7 @@ def encode_image(image):
 def encode_text(text):
     inputs = processor(text=text, return_tensors="pt", padding=True)
     return model.get_text_features(**inputs)
+"""
 
 
 @app.route('/testing', methods=['POST'])
