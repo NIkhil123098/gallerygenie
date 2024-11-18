@@ -7,5 +7,7 @@ app = Flask(__name__)
 
 @app.route('/getdata')
 def hello_world():
-    return 'Hello from Flask!'
+    return 'Hi ra'
+
+
 
