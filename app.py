@@ -33,6 +33,7 @@ def encode_text(text):
 def testing():
     return "Test succeed"
 
+"""
 @app.route('/find-images', methods=['POST'])
 def find_images():
     # Get the text prompt from the request
@@ -67,3 +68,4 @@ def find_images():
 
 if __name__ == '__main__':
     app.run(debug=True)
+"""
