@@ -26,10 +26,10 @@ def allowed_file(filename):
 
 # Function to compute cosine similarity
 def calculate_similarity(image, text):
-    # Process the image and text using CLIP processor
+    # Use the CLIP processor to encode both image and text into tensors
     inputs = processor(text=[text], images=image, return_tensors="pt", padding=True)
 
-    # Get the image and text features from the model
+    # Get the embeddings for image and text from the model
     with torch.no_grad():
         outputs = model(**inputs)
 
@@ -37,7 +37,7 @@ def calculate_similarity(image, text):
     image_features = outputs.image_embeds
     text_features = outputs.text_embeds
 
-    # Calculate cosine similarity
+    # Calculate cosine similarity between image and text
     similarity = torch.cosine_similarity(image_features, text_features)
 
     return similarity.item()
