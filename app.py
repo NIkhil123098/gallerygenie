@@ -38,8 +38,15 @@ def testing_data():
 @app.route('/find-images', methods=['GET','POST'])
 def find_images():
     # Get the text prompt from the request
-    text = request.form['text']
-    print(text)
+    if 'text' not in request.form:
+        return jsonify({'error': 'Text prompt is required'}), 400
+    else:
+         text = request.form['text']
+        
+    if not request.files.getlist('images[]'):
+        return jsonify({'error': 'At least one image file is required'}), 400
+   
+   
     
     # List to hold the image paths
     best_image = None
@@ -47,17 +54,20 @@ def find_images():
 
     # Process each image in the batch
     for image_file in request.files.getlist('images[]'):
-        image_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(image_file.filename))
-        image_file.save(image_path)
+        try:
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(image_file.filename))
+            image_file.save(image_path)
+            image = Image.open(image_path)
+        except Exception as e:
+            return jsonify({'error': f"Error processing image {image_file.filename}: {str(e)}"}), 400
 
-        image = Image.open(image_path)
 
         # Encode the image and the text
-        image_features = encode_image(image)
-        text_features = encode_text(text)
+        image_features = encode_image(image).squeeze(0)
+        text_features = encode_text(text).squeeze(0)
 
         # Calculate similarity between image and text
-        similarity = torch.cosine_similarity(text_features, image_features)
+        similarity = torch.cosine_similarity(text_features, image_features,dim=0)
 
         if similarity.item() > best_similarity:
             best_similarity = similarity.item()
