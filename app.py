@@ -39,7 +39,8 @@ def testing_data():
 def find_images():
     # Get the text prompt from the request
     text = request.form['text']
-    
+    return text
+    """
     # List to hold the image paths
     best_image = None
     best_similarity = -1
@@ -66,6 +67,7 @@ def find_images():
         return jsonify({'image_url': best_image})
     else:
         return jsonify({'error': 'No matching image found'}), 404
+    """
 
 if __name__ == '__main__':
     app.run(debug=True)
