@@ -1,84 +1,45 @@
 from flask import Flask, request, jsonify
 import os
-from PIL import Image
-import torch
-from transformers import CLIPProcessor, CLIPModel
 from werkzeug.utils import secure_filename
-
 
 app = Flask(__name__)
 
-
-# Load the CLIP model and processor
-model = CLIPModel.from_pretrained("openai/clip-vit-base-patch16")
-processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
-
-# Path to save uploaded images
-UPLOAD_FOLDER = "uploads"
+# Folder to store uploaded images
+UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Allowed file extensions (images)
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Function to encode image
-def encode_image(image):
-    inputs = processor(images=image, return_tensors="pt", padding=True)
-    return model.get_image_features(**inputs)
+# Function to check allowed file extensions
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Function to encode text
-def encode_text(text):
-    inputs = processor(text=text, return_tensors="pt", padding=True)
-    return model.get_text_features(**inputs)
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    # Check if the 'file' part is present in the request
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
 
+    # Get the file from the request
+    file = request.files['file']
 
+    # If no file is selected, the filename will be empty
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
 
-@app.route('/testing-data', methods=['GET','POST'])
-def testing_data():
-    return "Test succeed"
+    # Check if the file is allowed and save it
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
 
-
-@app.route('/find-images', methods=['GET','POST'])
-def find_images():
-    # Get the text prompt from the request
-    if 'text' not in request.form:
-        return jsonify({'error': 'Text prompt is required'}), 400
+        # Return the filename as the response
+        return jsonify({'filename': filename}), 200
     else:
-         text = request.form['text']
-        
-    if not request.files.getlist('images[]'):
-        return jsonify({'error': 'At least one image file is required'}), 400
-   
-   
-    
-    # List to hold the image paths
-    best_image = None
-    best_similarity = -1
-
-    # Process each image in the batch
-    for image_file in request.files.getlist('images[]'):
-        try:
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(image_file.filename))
-            image_file.save(image_path)
-            image = Image.open(image_path)
-        except Exception as e:
-            return jsonify({'error': f"Error processing image {image_file.filename}: {str(e)}"}), 400
-
-
-        # Encode the image and the text
-        image_features = encode_image(image).squeeze(0)
-        text_features = encode_text(text).squeeze(0)
-
-        # Calculate similarity between image and text
-        similarity = torch.cosine_similarity(text_features, image_features,dim=0)
-
-        if similarity.item() > best_similarity:
-            best_similarity = similarity.item()
-            best_image = image_path
-
-    if best_image:
-        return jsonify({'image_url': best_image})
-    else:
-        return jsonify({'error': 'No matching image found'}), 404
-    
+        return jsonify({'error': 'Invalid file type. Only image files are allowed.'}), 400
 
 if __name__ == '__main__':
     app.run(debug=True)
-
