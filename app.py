@@ -7,9 +7,14 @@ from transformers import CLIPProcessor, CLIPModel
 
 app = Flask(__name__)
 
-# Initialize the CLIP model and processor
-model = CLIPModel.from_pretrained("openai/clip-vit-base-patch16")
-processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
+# Load the CLIP model and processor
+try:
+    model = CLIPModel.from_pretrained("openai/clip-vit-base-patch16")
+    processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
+    print("Model and processor loaded successfully")
+except Exception as e:
+    print(f"Error loading model: {e}")
+    exit(1)
 
 # Folder to store uploaded images
 UPLOAD_FOLDER = 'uploads'
@@ -26,21 +31,25 @@ def allowed_file(filename):
 
 # Function to compute cosine similarity
 def calculate_similarity(image, text):
-    # Use the CLIP processor to encode both image and text into tensors
-    inputs = processor(text=[text], images=image, return_tensors="pt", padding=True)
+    try:
+        # Use the CLIP processor to encode both image and text into tensors
+        inputs = processor(text=[text], images=image, return_tensors="pt", padding=True)
+        
+        # Get the embeddings for image and text from the model
+        with torch.no_grad():
+            outputs = model(**inputs)
 
-    # Get the embeddings for image and text from the model
-    with torch.no_grad():
-        outputs = model(**inputs)
+        # Extract image and text features
+        image_features = outputs.image_embeds
+        text_features = outputs.text_embeds
 
-    # Extract image and text features
-    image_features = outputs.image_embeds
-    text_features = outputs.text_embeds
+        # Calculate cosine similarity between image and text
+        similarity = torch.cosine_similarity(image_features, text_features)
 
-    # Calculate cosine similarity between image and text
-    similarity = torch.cosine_similarity(image_features, text_features)
-
-    return similarity.item()
+        return similarity.item()
+    except Exception as e:
+        print(f"Error during similarity calculation: {e}")
+        return None
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -70,14 +79,16 @@ def upload_file():
         # Calculate the similarity between text and image
         similarity = calculate_similarity(image, text)
 
-        # Return the filename and the similarity score
-        return jsonify({
-            'filename': filename,
-            'similarity': similarity
-        }), 200
+        if similarity is not None:
+            # Return the filename and the similarity score
+            return jsonify({
+                'filename': filename,
+                'similarity': similarity
+            }), 200
+        else:
+            return jsonify({'error': 'Error calculating similarity'}), 500
     else:
         return jsonify({'error': 'Invalid file type. Only image files are allowed.'}), 400
-
 
 if __name__ == '__main__':
     app.run(debug=True)
