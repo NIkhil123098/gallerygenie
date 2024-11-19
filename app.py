@@ -28,15 +28,18 @@ def allowed_file(filename):
 def calculate_similarity(image, text):
     # Process the image and text using CLIP processor
     inputs = processor(text=[text], images=image, return_tensors="pt", padding=True)
-    
+
     # Get the image and text features from the model
     with torch.no_grad():
-        image_features = model.get_image_features(**inputs)
-        text_features = model.get_text_features(**inputs)
-    
+        outputs = model(**inputs)
+
+    # Extract image and text features
+    image_features = outputs.image_embeds
+    text_features = outputs.text_embeds
+
     # Calculate cosine similarity
     similarity = torch.cosine_similarity(image_features, text_features)
-    
+
     return similarity.item()
 
 @app.route('/upload', methods=['POST'])
