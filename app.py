@@ -1,8 +1,15 @@
 from flask import Flask, request, jsonify
 import os
+import torch
+from PIL import Image
 from werkzeug.utils import secure_filename
+from transformers import CLIPProcessor, CLIPModel
 
 app = Flask(__name__)
+
+# Initialize the CLIP model and processor
+model = CLIPModel.from_pretrained("openai/clip-vit-base-patch16")
+processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
 
 # Folder to store uploaded images
 UPLOAD_FOLDER = 'uploads'
@@ -16,6 +23,21 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Function to check allowed file extensions
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Function to compute cosine similarity
+def calculate_similarity(image, text):
+    # Process the image and text using CLIP processor
+    inputs = processor(text=[text], images=image, return_tensors="pt", padding=True)
+    
+    # Get the image and text features from the model
+    with torch.no_grad():
+        image_features = model.get_image_features(**inputs)
+        text_features = model.get_text_features(**inputs)
+    
+    # Calculate cosine similarity
+    similarity = torch.cosine_similarity(image_features, text_features)
+    
+    return similarity.item()
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -36,10 +58,23 @@ def upload_file():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        # Return the filename as the response
-        return jsonify({'filename': filename}), 200
+        # Open the image using PIL
+        image = Image.open(filepath).convert("RGB")
+
+        # Get the text prompt from the request
+        text = request.form['text']
+        
+        # Calculate the similarity between text and image
+        similarity = calculate_similarity(image, text)
+
+        # Return the filename and the similarity score
+        return jsonify({
+            'filename': filename,
+            'similarity': similarity
+        }), 200
     else:
         return jsonify({'error': 'Invalid file type. Only image files are allowed.'}), 400
+
 
 if __name__ == '__main__':
     app.run(debug=True)
