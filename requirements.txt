@@ -1,4 +1,7 @@
 Flask
+torch
+torchvision
+transformers
 tensorflow
 numpy
 Pillow
